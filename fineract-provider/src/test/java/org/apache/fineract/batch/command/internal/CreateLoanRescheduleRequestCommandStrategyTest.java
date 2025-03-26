@@ -18,21 +18,29 @@
  */
 package org.apache.fineract.batch.command.internal;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.fineract.batch.domain.BatchRequest;
 import org.apache.fineract.batch.domain.BatchResponse;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.api.RescheduleLoansApiResource;
+import org.apache.fineract.portfolio.loanaccount.rescheduleloan.data.request.LoanRescheduleCreationReq;
 import org.apache.http.HttpStatus;
+import org.json.JSONException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.skyscreamer.jsonassert.JSONAssert;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class for {@link CreateLoanRescheduleRequestCommandStrategy}.
@@ -42,18 +50,24 @@ public class CreateLoanRescheduleRequestCommandStrategyTest {
     /**
      * Test {@link CreateLoanRescheduleRequestCommandStrategy#execute} happy path scenario.
      */
-    @Test
-    public void testExecuteSuccessScenario() {
-        final TestContext testContext = new TestContext();
-        final BatchRequest batchRequest = getBatchRequest();
-        final String responseBody = "myResponseBody";
 
-        when(testContext.rescheduleLoansApiResource.createLoanRescheduleRequest(batchRequest.getBody())).thenReturn(responseBody);
+    @Test
+    public void testExecuteSuccessScenario() throws JsonProcessingException, JSONException {
+        final TestContext testContext = new TestContext();
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final BatchRequest batchRequest = getBatchRequest().setBody(objectMapper.writeValueAsString(new LoanRescheduleCreationReq()));
+        final LoanRescheduleCreationReq loanRescheduleCreationReq = objectMapper.readValue(batchRequest.getBody(), LoanRescheduleCreationReq.class);
+
+        final CommandProcessingResult responseBody = CommandProcessingResult.empty();
+        final String mappedResponseBody = objectMapper.writeValueAsString(responseBody);
+
+        when(testContext.rescheduleLoansApiResource.createLoanRescheduleRequest(loanRescheduleCreationReq)).thenReturn(responseBody);
 
         BatchResponse batchResponse = testContext.subjectToTest.execute(batchRequest, testContext.uriInfo);
 
         assertEquals(HttpStatus.SC_OK, batchResponse.getStatusCode());
-        assertSame(responseBody, batchResponse.getBody());
+        assertEquals(mappedResponseBody, batchResponse.getBody());
+        JSONAssert.assertEquals(mappedResponseBody, batchResponse.getBody(), false);
         assertEquals(batchRequest.getRequestId(), batchResponse.getRequestId());
         assertEquals(batchRequest.getHeaders(), batchResponse.getHeaders());
 
@@ -107,7 +121,7 @@ public class CreateLoanRescheduleRequestCommandStrategyTest {
          */
         TestContext() {
             MockitoAnnotations.openMocks(this);
-            subjectToTest = new CreateLoanRescheduleRequestCommandStrategy(rescheduleLoansApiResource);
+            subjectToTest = new CreateLoanRescheduleRequestCommandStrategy(rescheduleLoansApiResource, new ObjectMapper());
         }
     }
 }

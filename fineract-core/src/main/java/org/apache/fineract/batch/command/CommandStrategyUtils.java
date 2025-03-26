@@ -29,6 +29,9 @@ import org.apache.fineract.infrastructure.core.api.MutableUriInfo;
 public final class CommandStrategyUtils {
 
     private static final Pattern VERSIONED_RELATIVE_URL_PATTERN = Pattern.compile("^(v[1-9][0-9]*/)(.*)$");
+    public static final String COMMAND_VALUE_APPROVE = "approve";
+    public static final String COMMAND_VALUE_REJECT = "reject";
+    public static final String COMMAND_VALUE_PREVIEW_LOAN_RESCHEDULE = "previewLoanReschedule";
 
     private CommandStrategyUtils() {
 

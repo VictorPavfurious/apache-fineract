@@ -18,8 +18,11 @@
  */
 package org.apache.fineract.batch.command.internal;
 
+import static org.apache.fineract.batch.command.CommandStrategyUtils.COMMAND_VALUE_APPROVE;
 import static org.apache.fineract.batch.command.CommandStrategyUtils.relativeUrlWithoutVersion;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
 import jakarta.ws.rs.core.UriInfo;
 import java.util.List;
@@ -27,7 +30,9 @@ import lombok.RequiredArgsConstructor;
 import org.apache.fineract.batch.command.CommandStrategy;
 import org.apache.fineract.batch.domain.BatchRequest;
 import org.apache.fineract.batch.domain.BatchResponse;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.api.RescheduleLoansApiResource;
+import org.apache.fineract.portfolio.loanaccount.rescheduleloan.data.request.LoanRescheduleUpdateReq;
 import org.apache.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -36,11 +41,12 @@ import org.springframework.stereotype.Component;
 public class ApproveLoanRescheduleCommandStrategy implements CommandStrategy {
 
     private final RescheduleLoansApiResource rescheduleLoansApiResource;
+    private final ObjectMapper objectMapper;
 
     @Override
     public BatchResponse execute(BatchRequest request, final UriInfo uriInfo) {
         final BatchResponse response = new BatchResponse();
-        final String responseBody;
+        CommandProcessingResult responseBody;
 
         response.setRequestId(request.getRequestId());
         response.setHeaders(request.getHeaders());
@@ -51,12 +57,21 @@ public class ApproveLoanRescheduleCommandStrategy implements CommandStrategy {
         // Calls 'approve' function from 'Loans reschedule Request' to
         // approve a
         // loan
-        responseBody = rescheduleLoansApiResource.updateLoanRescheduleRequest(scheduleId, "approve", request.getBody());
+        try {
+            LoanRescheduleUpdateReq loanRescheduleUpdateReq = objectMapper.readValue(request.getBody(), LoanRescheduleUpdateReq.class);
+            responseBody = rescheduleLoansApiResource.updateLoanRescheduleRequest(scheduleId, COMMAND_VALUE_APPROVE, loanRescheduleUpdateReq);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Error deserialize JSON to LoanRescheduleUpdateReq object", e);
+        }
 
         response.setStatusCode(HttpStatus.SC_OK);
         // Sets the body of the response after the successful approval of a
         // Loans reschedule Request
-        response.setBody(responseBody);
+        try {
+            response.setBody(objectMapper.writeValueAsString(responseBody));
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Error serializing request to JSON", e);
+        }
 
         return response;
     }

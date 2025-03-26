@@ -19,7 +19,6 @@
 package org.apache.fineract.portfolio.loanaccount.rescheduleloan.api;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -36,8 +35,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
-import java.util.HashSet;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -48,18 +45,30 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamException;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.CommandParameterUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.RescheduleLoansApiConstants;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.data.LoanRescheduleRequestData;
+import org.apache.fineract.portfolio.loanaccount.rescheduleloan.data.request.LoanRescheduleCreationReq;
+import org.apache.fineract.portfolio.loanaccount.rescheduleloan.data.request.LoanRescheduleUpdateReq;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanReschedulePreviewPlatformService;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanRescheduleRequestReadPlatformService;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+
+import static org.apache.fineract.batch.command.CommandStrategyUtils.COMMAND_VALUE_APPROVE;
+import static org.apache.fineract.batch.command.CommandStrategyUtils.COMMAND_VALUE_PREVIEW_LOAN_RESCHEDULE;
+import static org.apache.fineract.batch.command.CommandStrategyUtils.COMMAND_VALUE_REJECT;
+
 @Path("/v1/rescheduleloans")
 @Component
-@Tag(name = "Reschedule Loans", description = "")
+@Tag(name = "Reschedule Loans")
 @RequiredArgsConstructor
 public class RescheduleLoansApiResource {
 
@@ -71,22 +80,27 @@ public class RescheduleLoansApiResource {
     private final LoanReschedulePreviewPlatformService loanReschedulePreviewPlatformService;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
 
+    private static final Map<String, BiFunction<Long, String, CommandWrapper>> COMMAND_WRAPPER_HANDLERS = Map.of(
+            COMMAND_VALUE_APPROVE, (scheduleId, json) -> new CommandWrapperBuilder()
+                    .approveLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, scheduleId)
+                    .withJson(json)
+                    .build(),
+            COMMAND_VALUE_REJECT, (scheduleId, json) -> new CommandWrapperBuilder()
+                    .rejectLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, scheduleId)
+                    .withJson(json)
+                    .build()
+    );
+
     @GET
     @Path("template")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve all reschedule loan reasons", description = "Retrieve all reschedule loan reasons as a template")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RescheduleLoansApiResourceSwagger.GetRescheduleReasonsTemplateResponse.class))) })
-    public String retrieveTemplate(@Context final UriInfo uriInfo) {
+    public LoanRescheduleRequestData retrieveTemplate() {
+        platformSecurityContext.authenticatedUser().validateHasReadPermission(RescheduleLoansApiConstants.ENTITY_NAME);
 
-        this.platformSecurityContext.authenticatedUser().validateHasReadPermission(RescheduleLoansApiConstants.ENTITY_NAME);
-        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
-
-        LoanRescheduleRequestData loanRescheduleReasons = this.loanRescheduleRequestReadPlatformService
+        return loanRescheduleRequestReadPlatformService
                 .retrieveAllRescheduleReasons(RescheduleLoansApiConstants.LOAN_RESCHEDULE_REASON);
-
-        return this.loanRescheduleRequestToApiJsonSerializer.serialize(settings, loanRescheduleReasons);
     }
 
     @GET
@@ -98,36 +112,36 @@ public class RescheduleLoansApiResource {
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RescheduleLoansApiResourceSwagger.GetLoanRescheduleRequestResponse.class))) })
     public String readLoanRescheduleRequest(@Context final UriInfo uriInfo, @PathParam("scheduleId") final Long scheduleId,
             @QueryParam("command") final String command) {
-        this.platformSecurityContext.authenticatedUser().validateHasReadPermission(RescheduleLoansApiConstants.ENTITY_NAME);
+        platformSecurityContext.authenticatedUser().validateHasReadPermission(RescheduleLoansApiConstants.ENTITY_NAME);
 
-        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        final ApiRequestJsonSerializationSettings settings = apiRequestParameterHelper.process(uriInfo.getQueryParameters());
 
-        if (compareIgnoreCase(command, "previewLoanReschedule")) {
-            final LoanScheduleModel loanRescheduleModel = this.loanReschedulePreviewPlatformService.previewLoanReschedule(scheduleId);
+        if (CommandParameterUtil.is(command, COMMAND_VALUE_PREVIEW_LOAN_RESCHEDULE)) {
+            final LoanScheduleModel loanRescheduleModel = loanReschedulePreviewPlatformService.previewLoanReschedule(scheduleId);
 
-            return this.loanRescheduleToApiJsonSerializer.serialize(settings, loanRescheduleModel.toData(), new HashSet<String>());
+            return loanRescheduleToApiJsonSerializer.serialize(settings, loanRescheduleModel.toData(), new HashSet<String>());
         }
 
-        final LoanRescheduleRequestData loanRescheduleRequestData = this.loanRescheduleRequestReadPlatformService
+        final LoanRescheduleRequestData loanRescheduleRequestData = loanRescheduleRequestReadPlatformService
                 .readLoanRescheduleRequest(scheduleId);
 
-        return this.loanRescheduleRequestToApiJsonSerializer.serialize(settings, loanRescheduleRequestData);
+        return loanRescheduleRequestToApiJsonSerializer.serialize(settings, loanRescheduleRequestData);
     }
 
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Create loan reschedule request", description = "Create a loan reschedule request.")
-    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = RescheduleLoansApiResourceSwagger.PostCreateRescheduleLoansRequest.class)))
+    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = LoanRescheduleCreationReq.class)))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RescheduleLoansApiResourceSwagger.PostCreateRescheduleLoansResponse.class))) })
-    public String createLoanRescheduleRequest(final String apiRequestBodyAsJson) {
+    public CommandProcessingResult createLoanRescheduleRequest(LoanRescheduleCreationReq loanRescheduleCreationReq) {
         final CommandWrapper commandWrapper = new CommandWrapperBuilder()
-                .createLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME).withJson(apiRequestBodyAsJson).build();
+                .createLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME)
+                .withJson(loanRescheduleRequestToApiJsonSerializer.serialize(loanRescheduleCreationReq))
+                .build();
 
-        final CommandProcessingResult commandProcessingResult = this.commandsSourceWritePlatformService.logCommandSource(commandWrapper);
-
-        return this.loanRescheduleRequestToApiJsonSerializer.serialize(commandProcessingResult);
+        return commandsSourceWritePlatformService.logCommandSource(commandWrapper);
     }
 
     @POST
@@ -138,62 +152,30 @@ public class RescheduleLoansApiResource {
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = RescheduleLoansApiResourceSwagger.PostUpdateRescheduleLoansRequest.class)))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RescheduleLoansApiResourceSwagger.PostUpdateRescheduleLoansResponse.class))) })
-    public String updateLoanRescheduleRequest(@PathParam("scheduleId") final Long scheduleId, @QueryParam("command") final String command,
-            final String apiRequestBodyAsJson) {
-        CommandWrapper commandWrapper;
+    public CommandProcessingResult updateLoanRescheduleRequest(@PathParam("scheduleId") final Long scheduleId, @QueryParam("command") final String command,
+                                                               LoanRescheduleUpdateReq loanRescheduleUpdateReq) {
 
-        if (compareIgnoreCase(command, "approve")) {
-            commandWrapper = new CommandWrapperBuilder().approveLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, scheduleId)
-                    .withJson(apiRequestBodyAsJson).build();
-        }
+        final String serializedLoanReschedule = loanRescheduleToApiJsonSerializer.serialize(loanRescheduleUpdateReq);
+        final CommandWrapper commandWrapper = COMMAND_WRAPPER_HANDLERS.getOrDefault(command, (id, json) -> {
+            throw new UnrecognizedQueryParamException("command", command, COMMAND_VALUE_APPROVE, COMMAND_VALUE_REJECT);
+        }).apply(scheduleId, serializedLoanReschedule);
 
-        else if (compareIgnoreCase(command, "reject")) {
-            commandWrapper = new CommandWrapperBuilder().rejectLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, scheduleId)
-                    .withJson(apiRequestBodyAsJson).build();
-        }
-
-        else {
-            throw new UnrecognizedQueryParamException("command", command, "approve", "reject");
-        }
-
-        final CommandProcessingResult commandProcessingResult = this.commandsSourceWritePlatformService.logCommandSource(commandWrapper);
-
-        return this.loanRescheduleRequestToApiJsonSerializer.serialize(commandProcessingResult);
-    }
-
-    /**
-     * Compares two strings, ignoring differences in case
-     *
-     * @param firstString
-     *            the first string
-     * @param secondString
-     *            the second string
-     * @return true if the two strings are equal, else false
-     **/
-    private boolean compareIgnoreCase(String firstString, String secondString) {
-        return StringUtils.isNotBlank(firstString) && firstString.trim().equalsIgnoreCase(secondString);
+        return commandsSourceWritePlatformService.logCommandSource(commandWrapper);
     }
 
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve all reschedule requests", description = "Retrieve all reschedule requests.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK", content = @Content(array = @ArraySchema(schema = @Schema(implementation = RescheduleLoansApiResourceSwagger.GetLoanRescheduleRequestResponse.class)))) })
-    public String retrieveAllRescheduleRequest(@Context final UriInfo uriInfo, @QueryParam("command") final String command,
+    public List<LoanRescheduleRequestData> retrieveAllRescheduleRequest(@QueryParam("command") final String command,
             @QueryParam("loanId") Long loanId) {
+        platformSecurityContext.authenticatedUser().validateHasReadPermission(RescheduleLoansApiConstants.ENTITY_NAME);
 
-        this.platformSecurityContext.authenticatedUser().validateHasReadPermission(RescheduleLoansApiConstants.ENTITY_NAME);
-
-        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         if (StringUtils.isNotBlank(command) && !RescheduleLoansApiConstants.commandParams.contains(command.toLowerCase())) {
             throw new UnrecognizedQueryParamException("command", command, RescheduleLoansApiConstants.allCommandParamName,
                     RescheduleLoansApiConstants.pendingCommandParamName, RescheduleLoansApiConstants.approveCommandParamName,
                     RescheduleLoansApiConstants.rejectCommandParamName);
         }
-        final List<LoanRescheduleRequestData> loanRescheduleRequestsData = this.loanRescheduleRequestReadPlatformService
-                .retrieveAllRescheduleRequests(command, loanId);
-
-        return this.loanRescheduleRequestToApiJsonSerializer.serialize(settings, loanRescheduleRequestsData);
+        return loanRescheduleRequestReadPlatformService.retrieveAllRescheduleRequests(command, loanId);
     }
 }
