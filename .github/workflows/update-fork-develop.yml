@@ -1,0 +1,63 @@
+name: Update fork dev from remote Fineract dev
+
+on:  
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:     
+
+jobs:
+  sync-and-notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout forked repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Setup Git user
+        run: |
+          git config --global user.name "viktorpavlenko"
+          git config --global user.email "vitek.pavfurious@gmail.com"      
+
+      - name: Add upstream and fetch only develop branch
+        run: |
+          git remote add upstream https://github.com/apache/fineract.git || true
+          git fetch upstream develop:upstream-develop
+
+      - name: Checkout develop branch
+        run: git checkout develop
+
+      - name: Merge upstream develop into forked develop
+        id: merge
+        run: |
+          set +e
+          git merge --no-edit upstream-develop
+          echo "MERGE_EXIT_CODE=$?" >> $GITHUB_ENV
+          set -e
+
+      - name: Push changes to forked develop (only if updated and no conflict)
+        if: env.MERGE_EXIT_CODE == '0'
+        run: |
+          git diff --quiet || git push origin develop
+
+      - name: Create PR with merge conflicts
+        if: env.MERGE_EXIT_CODE != '0'
+        run: |
+          git merge --abort || true
+          git checkout -b conflict-merge
+          git merge upstream-develop || true
+          git push origin conflict-merge --force
+
+      - name: Open PR for manual conflict resolution
+        if: env.MERGE_EXIT_CODE != '0'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Merge conflict: upstream/develop → develop"
+          title: "Manual Merge Needed: upstream/develop → develop"
+          body: |
+            ❗ Merge conflict in auto update branch develop.
+            🔧 Please checks branch `conflict-merge`, solve conflicts and merge into local develop.
+          base: develop
+          branch: conflict-merge
