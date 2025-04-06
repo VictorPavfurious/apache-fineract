@@ -2,8 +2,13 @@ name: Update fork dev from remote Fineract dev
 
 on:  
   schedule:
-    - cron: '0 * * * *'
-  workflow_dispatch:     
+#    - cron: '0 */3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  workflows: write
 
 jobs:
   sync-and-notify:
@@ -17,8 +22,8 @@ jobs:
 
       - name: Setup Git user
         run: |
-          git config --global user.name "viktorpavlenko"
-          git config --global user.email "vitek.pavfurious@gmail.com"      
+          git config --global user.name "${{ secrets.USER_NAME }}"
+          git config --global user.email "${{ secrets.USER_EMAIL }}"      
 
       - name: Add upstream and fetch only develop branch
         run: |
@@ -26,7 +31,7 @@ jobs:
           git fetch upstream develop:upstream-develop
 
       - name: Checkout develop branch
-        run: git checkout develop
+        run: git checkout -B develop origin/develop
 
       - name: Merge upstream develop into forked develop
         id: merge
@@ -39,7 +44,7 @@ jobs:
       - name: Push changes to forked develop (only if updated and no conflict)
         if: env.MERGE_EXIT_CODE == '0'
         run: |
-          git diff --quiet || git push origin develop
+          git push origin develop
 
       - name: Create PR with merge conflicts
         if: env.MERGE_EXIT_CODE != '0'
