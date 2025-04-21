@@ -25,7 +25,12 @@ import lombok.RequiredArgsConstructor;
 import org.apache.fineract.batch.command.CommandStrategy;
 import org.apache.fineract.batch.domain.BatchRequest;
 import org.apache.fineract.batch.domain.BatchResponse;
+import org.apache.fineract.commands.domain.CommandWrapper;
+import org.apache.fineract.commands.service.CommandWrapperBuilder;
+import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
 import org.apache.fineract.portfolio.client.api.ClientsApiResource;
+import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
 import org.apache.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -46,7 +51,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class UpdateClientCommandStrategy implements CommandStrategy {
 
-    private final ClientsApiResource clientsApiResource;
+    private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final ToApiJsonSerializer<String> toApiJsonSerializer;
+
 
     @Override
     public BatchResponse execute(BatchRequest request, @SuppressWarnings("unused") UriInfo uriInfo) {
@@ -61,9 +68,12 @@ public class UpdateClientCommandStrategy implements CommandStrategy {
         final String relativeUrl = relativeUrlWithoutVersion(request);
         final Long clientId = Long.parseLong(relativeUrl.substring(relativeUrl.indexOf('/') + 1));
 
-        // Calls 'update' function from 'ClientsApiResource' to update a
-        // client
-        responseBody = clientsApiResource.update(clientId, request.getBody());
+        final CommandWrapper commandRequest = new CommandWrapperBuilder()
+                .updateClient(clientId)
+                .withJson(request.getBody())
+                .build();
+
+        responseBody = toApiJsonSerializer.serialize(commandsSourceWritePlatformService.logCommandSource(commandRequest));
 
         response.setStatusCode(HttpStatus.SC_OK);
         // Sets the body of the response after the successful update of

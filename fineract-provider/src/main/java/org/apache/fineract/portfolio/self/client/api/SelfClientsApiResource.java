@@ -41,16 +41,22 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.io.InputStream;
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.UploadRequest;
+import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.documentmanagement.api.ImagesApiResource;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.portfolio.accountdetails.data.AccountSummaryCollectionData;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.client.api.ClientChargesApiResource;
 import org.apache.fineract.portfolio.client.api.ClientTransactionsApiResource;
 import org.apache.fineract.portfolio.client.api.ClientsApiResource;
+import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
+import org.apache.fineract.portfolio.loanaccount.guarantor.data.ObligeeData;
 import org.apache.fineract.portfolio.self.client.data.SelfClientDataValidator;
 import org.apache.fineract.portfolio.self.client.service.AppuserClientMapperReadService;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -81,21 +87,20 @@ public class SelfClientsApiResource {
             + "self/clients?offset=10&limit=50\n" + "\n" + "self/clients?orderBy=displayName&sortOrder=DESC")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SelfClientsApiResourceSwagger.GetSelfClientsResponse.class))) })
-    public String retrieveAll(@Context final UriInfo uriInfo,
-            @QueryParam("displayName") @Parameter(description = "displayName") final String displayName,
-            @QueryParam("firstName") @Parameter(description = "firstName") final String firstname,
-            @QueryParam("lastName") @Parameter(description = "lastName") final String lastname,
-            @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
-            @QueryParam("status") @Parameter(description = "status") final String status,
-            @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
-            @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
-            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
+    public Page<ClientData> retrieveAll(@QueryParam("displayName") @Parameter(description = "displayName") final String displayName,
+                                        @QueryParam("firstName") @Parameter(description = "firstName") final String firstname,
+                                        @QueryParam("lastName") @Parameter(description = "lastName") final String lastname,
+                                        @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
+                                        @QueryParam("status") @Parameter(description = "status") final String status,
+                                        @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
+                                        @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
+                                        @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
 
         final Long officeId = null;
         final String externalId = null;
         final String hierarchy = null;
         final Boolean orphansOnly = null;
-        return this.clientApiResource.retrieveAll(uriInfo, officeId, externalId, displayName, firstname, lastname, status, hierarchy,
+        return this.clientApiResource.receiveAll(officeId, externalId, displayName, firstname, lastname, status, hierarchy,
                 offset, limit, orderBy, sortOrder, orphansOnly, true);
     }
 
@@ -107,7 +112,7 @@ public class SelfClientsApiResource {
             + "\n" + "self/clients/1?fields=id,displayName,officeName")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SelfClientsApiResourceSwagger.GetSelfClientsClientIdResponse.class))) })
-    public String retrieveOne(@PathParam("clientId") @Parameter(description = "clientId") final Long clientId,
+    public ClientData retrieveOne(@PathParam("clientId") @Parameter(description = "clientId") final Long clientId,
             @Context final UriInfo uriInfo) {
 
         this.dataValidator.validateRetrieveOne(uriInfo);
@@ -127,12 +132,12 @@ public class SelfClientsApiResource {
             + "\n" + "self/clients/1/accounts\n" + "\n" + "\n" + "self/clients/1/accounts?fields=loanAccounts,savingsAccounts")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SelfClientsApiResourceSwagger.GetSelfClientsClientIdAccountsResponse.class))) })
-    public String retrieveAssociatedAccounts(@PathParam("clientId") @Parameter(description = "clientId") final Long clientId,
-            @Context final UriInfo uriInfo) {
+    public AccountSummaryCollectionData retrieveAssociatedAccounts(@PathParam("clientId") @Parameter(description = "clientId") final Long clientId,
+                                                                   @Context final UriInfo uriInfo) {
 
         validateAppuserClientsMapping(clientId);
 
-        return this.clientApiResource.retrieveAssociatedAccounts(clientId, uriInfo);
+        return this.clientApiResource.retrieveAssociatedAccounts(clientId);
     }
 
     @GET
@@ -273,7 +278,7 @@ public class SelfClientsApiResource {
     @Path("{clientId}/obligeedetails")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveObligeeDetails(@PathParam("clientId") final Long clientId, @Context final UriInfo uriInfo) {
+    public List<ObligeeData> retrieveObligeeDetails(@PathParam("clientId") final Long clientId, @Context final UriInfo uriInfo) {
 
         validateAppuserClientsMapping(clientId);
 

@@ -27,6 +27,10 @@ import lombok.RequiredArgsConstructor;
 import org.apache.fineract.batch.command.CommandStrategy;
 import org.apache.fineract.batch.domain.BatchRequest;
 import org.apache.fineract.batch.domain.BatchResponse;
+import org.apache.fineract.commands.domain.CommandWrapper;
+import org.apache.fineract.commands.service.CommandWrapperBuilder;
+import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
 import org.apache.fineract.portfolio.client.api.ClientsApiResource;
 import org.apache.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -48,7 +52,8 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ActivateClientCommandStrategy implements CommandStrategy {
 
-    private final ClientsApiResource clientsApiResource;
+    private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final ToApiJsonSerializer<String> toApiJsonSerializer;
 
     @Override
     public BatchResponse execute(final BatchRequest request, @SuppressWarnings("unused") UriInfo uriInfo) {
@@ -64,7 +69,13 @@ public class ActivateClientCommandStrategy implements CommandStrategy {
 
         // Calls 'activate' function from 'ClientsApiResource' to activate a
         // client
-        responseBody = clientsApiResource.activate(clientId, "activate", request.getBody());
+
+        final CommandWrapper commandRequest = new CommandWrapperBuilder()
+                .activateClient(clientId)
+                .withJson(request.getBody())
+                .build();
+
+        responseBody = toApiJsonSerializer.serialize(commandsSourceWritePlatformService.logCommandSource(commandRequest));
 
         response.setStatusCode(HttpStatus.SC_OK);
         // Sets the body of the response after the successful activation of

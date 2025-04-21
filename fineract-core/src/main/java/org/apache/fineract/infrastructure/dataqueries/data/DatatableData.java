@@ -18,12 +18,15 @@
  */
 package org.apache.fineract.infrastructure.dataqueries.data;
 
+import lombok.Getter;
+
 import java.io.Serializable;
 import java.util.List;
 
 /**
  * Immutable data object representing datatable data.
  */
+@Getter
 public final class DatatableData implements Serializable {
 
     @SuppressWarnings("unused")
@@ -60,9 +63,4 @@ public final class DatatableData implements Serializable {
 
         return false;
     }
-
-    public String getRegisteredTableName() {
-        return registeredTableName;
-    }
-
 }

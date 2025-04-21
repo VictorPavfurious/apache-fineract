@@ -22,8 +22,11 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
+
+import lombok.Getter;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 
+@Getter
 @SuppressWarnings("unused")
 public class AddressData implements Serializable {
 

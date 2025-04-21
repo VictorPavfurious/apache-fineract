@@ -19,10 +19,18 @@
 
 package org.apache.fineract.portfolio.loanaccount.guarantor.data;
 
+import lombok.Getter;
+
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 
+@Getter
 @SuppressWarnings("unused")
-public final class ObligeeData {
+public final class ObligeeData implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final String firstName;
     private final String lastName;

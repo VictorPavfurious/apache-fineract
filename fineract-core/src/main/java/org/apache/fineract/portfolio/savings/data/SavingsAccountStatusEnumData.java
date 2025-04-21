@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.savings.data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,9 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public class SavingsAccountStatusEnumData implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final Long id;
     private final String code;

@@ -18,13 +18,21 @@
  */
 package org.apache.fineract.portfolio.accountdetails.data;
 
+import lombok.Getter;
+
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Collection;
 
 /**
  * Immutable data object representing a summary of various accounts.
  */
+@Getter
 @SuppressWarnings("unused")
-public class AccountSummaryCollectionData {
+public class AccountSummaryCollectionData implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final Collection<LoanAccountSummaryData> loanAccounts;
     private final Collection<LoanAccountSummaryData> groupLoanIndividualMonitoringAccounts;

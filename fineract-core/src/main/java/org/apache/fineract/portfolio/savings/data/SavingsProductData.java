@@ -23,6 +23,10 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.accounting.producttoaccountmapping.data.ChargeToGLAccountMapper;
@@ -36,6 +40,7 @@ import org.apache.fineract.portfolio.tax.data.TaxGroupData;
 /**
  * Immutable data object represent a savings product.
  */
+@Getter
 public final class SavingsProductData implements Serializable {
 
     private final Long id;
@@ -63,6 +68,7 @@ public final class SavingsProductData implements Serializable {
     private final BigDecimal minOverdraftForInterestCalculation;
     private final boolean withHoldTax;
     private final TaxGroupData taxGroup;
+    @Setter
     private String depositAccountType = null;
     private final String accountMappingForPayment;
 
@@ -517,90 +523,21 @@ public final class SavingsProductData implements Serializable {
         return this.id.hashCode();
     }
 
-    public String getName() {
-        return this.name;
-    }
-
-    public String getDepositAccountType() {
-        return depositAccountType;
-    }
-
-    public void setDepositAccountType(String depositAccountType) {
-        this.depositAccountType = depositAccountType;
-    }
-
-    public BigDecimal getNominalAnnualInterestRate() {
-        return nominalAnnualInterestRate;
-    }
-
-    public CurrencyData getCurrency() {
-        return currency;
-    }
-
-    public Integer getLockinPeriodFrequency() {
-        return lockinPeriodFrequency;
-    }
-
-    public EnumOptionData getLockinPeriodFrequencyType() {
-        return lockinPeriodFrequencyType;
-    }
-
-    public BigDecimal getOverdraftLimit() {
-        return overdraftLimit;
-    }
-
-    public BigDecimal getMinRequiredOpeningBalance() {
-        return minRequiredOpeningBalance;
-    }
-
-    public EnumOptionData getInterestCompoundingPeriodType() {
-        return interestCompoundingPeriodType;
-    }
-
-    public EnumOptionData getInterestPostingPeriodType() {
-        return interestPostingPeriodType;
-    }
-
-    public EnumOptionData getInterestCalculationType() {
-        return interestCalculationType;
-    }
-
-    public EnumOptionData getInterestCalculationDaysInYearType() {
-        return interestCalculationDaysInYearType;
-    }
-
-    public boolean isAllowOverdraft() {
-        return allowOverdraft;
-    }
-
-    public BigDecimal getMinRequiredBalance() {
-        return minRequiredBalance;
-    }
-
-    public BigDecimal getMaxAllowedLienLimit() {
-        return maxAllowedLienLimit;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public boolean isWithdrawalFeeForTransfers() {
-        return withdrawalFeeForTransfers;
-    }
-
+    @JsonIgnore
     public boolean isCashBasedAccountingEnabled() {
         return AccountingRuleType.CASH_BASED.getValue().toString().equals(this.accountingRule.getValue());
     }
 
+    @JsonIgnore
     public boolean isAccrualBasedAccountingEnabled() {
         return isUpfrontAccrualAccounting() || isPeriodicAccrualAccounting();
     }
 
-    public boolean isUpfrontAccrualAccounting() {
+    private boolean isUpfrontAccrualAccounting() {
         return AccountingRuleType.ACCRUAL_UPFRONT.getValue().toString().equals(this.accountingRule.getValue());
     }
 
+    @JsonIgnore
     public boolean isPeriodicAccrualAccounting() {
         return AccountingRuleType.ACCRUAL_PERIODIC.getValue().toString().equals(this.accountingRule.getValue());
     }

@@ -21,11 +21,14 @@ package org.apache.fineract.organisation.staff.data;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Collection;
+
+import lombok.Getter;
 import org.apache.fineract.organisation.office.data.OfficeData;
 
 /**
  * Immutable data object representing staff data.
  */
+@Getter
 public final class StaffData implements Serializable {
 
     private final Long id;
@@ -72,10 +75,6 @@ public final class StaffData implements Serializable {
         this.displayName = null;
     }
 
-    public Integer getRowIndex() {
-        return rowIndex;
-    }
-
     @SuppressWarnings("unused")
     private final Collection<OfficeData> allowedOffices;
 
@@ -110,33 +109,5 @@ public final class StaffData implements Serializable {
         this.allowedOffices = allowedOffices;
         this.isActive = isActive;
         this.joiningDate = joiningDate;
-    }
-
-    public Long getId() {
-        return this.id;
-    }
-
-    public String getDisplayName() {
-        return this.displayName;
-    }
-
-    public String getFirstname() {
-        return this.firstname;
-    }
-
-    public String getLastname() {
-        return this.lastname;
-    }
-
-    public String getOfficeName() {
-        return this.officeName;
-    }
-
-    public LocalDate getJoiningDate() {
-        return this.joiningDate;
-    }
-
-    public Long getOfficeId() {
-        return this.officeId;
     }
 }

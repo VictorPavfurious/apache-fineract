@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.accountdetails.data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import lombok.Getter;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -26,6 +27,9 @@ import org.apache.fineract.portfolio.shareaccounts.data.ShareAccountStatusEnumDa
 
 @Getter
 public class ShareAccountSummaryData implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final Long id;
     private final String accountNo;

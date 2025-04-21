@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.monetary.data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -30,6 +31,9 @@ import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 @Getter
 @EqualsAndHashCode
 public class CurrencyData implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final String code;
     private final String name;

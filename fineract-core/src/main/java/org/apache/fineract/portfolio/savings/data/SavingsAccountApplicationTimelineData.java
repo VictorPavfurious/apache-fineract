@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.savings.data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 import lombok.Getter;
@@ -31,6 +32,9 @@ import org.apache.fineract.infrastructure.core.jersey.serializer.legacy.JsonLoca
 @RequiredArgsConstructor
 @JsonLocalDateArrayFormat
 public class SavingsAccountApplicationTimelineData implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final LocalDate submittedOnDate;
     private final String submittedByUsername;

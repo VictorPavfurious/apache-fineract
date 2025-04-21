@@ -23,11 +23,17 @@ import org.apache.fineract.infrastructure.core.config.MapstructMapperConfig;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 /**
  * Immutable data object represent loan status enumerations.
  */
 @Getter
-public class LoanStatusEnumData {
+public class LoanStatusEnumData implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final Long id;
     private final String code;

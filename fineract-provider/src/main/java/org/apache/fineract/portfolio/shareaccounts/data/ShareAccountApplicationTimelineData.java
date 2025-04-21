@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.shareaccounts.data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 import lombok.Getter;
@@ -26,6 +27,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Getter
 public class ShareAccountApplicationTimelineData implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final LocalDate submittedOnDate;
     private final String submittedByUsername;

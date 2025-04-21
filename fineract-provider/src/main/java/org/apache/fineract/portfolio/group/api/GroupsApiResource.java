@@ -277,8 +277,8 @@ public class GroupsApiResource {
                 }
             }
             if (associationParameters.contains("collectionMeetingCalendar")) {
-                if (group.isChildGroup()) {
-                    collectionMeetingCalendar = calendarReadPlatformService.retrieveCollctionCalendarByEntity(group.getParentId(),
+                if (group.isCenterIdNotNull()) {
+                    collectionMeetingCalendar = calendarReadPlatformService.retrieveCollctionCalendarByEntity(group.getCenterId(),
                             CalendarEntityType.CENTERS.getValue());
                 } else {
                     collectionMeetingCalendar = calendarReadPlatformService.retrieveCollctionCalendarByEntity(groupId,

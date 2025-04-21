@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.client.data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import lombok.Getter;

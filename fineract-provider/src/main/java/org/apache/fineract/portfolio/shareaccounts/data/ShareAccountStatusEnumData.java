@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.shareaccounts.data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +30,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ShareAccountStatusEnumData implements Serializable {
 
-    private final Long id;
+    @Serial
+    private static final long serialVersionUID = 1L;
 
+    private final Long id;
     private final String code;
     private final String value;
     private final boolean submittedAndPendingApproval;

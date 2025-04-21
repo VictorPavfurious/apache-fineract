@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.portfolio.accountdetails.data;
 
-import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -26,12 +25,19 @@ import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApplicationTimelineData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanStatusEnumData;
 
+import java.io.Serial;
+import java.io.Serializable;
+import java.math.BigDecimal;
+
 /**
  * Immutable data object for loan accounts.
  */
 @Getter
 @RequiredArgsConstructor
-public class LoanAccountSummaryData {
+public class LoanAccountSummaryData implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final Long id;
     private final String accountNo;

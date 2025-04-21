@@ -18,11 +18,14 @@
  */
 package org.apache.fineract.portfolio.loanaccount.data;
 
-import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+
+import java.io.Serial;
+import java.io.Serializable;
+import java.time.LocalDate;
 
 /**
  * Data object represent the important time-line events of a loan application and loan.
@@ -31,7 +34,10 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class LoanApplicationTimelineData {
+public class LoanApplicationTimelineData implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private LocalDate submittedOnDate;
     private String submittedByUsername;

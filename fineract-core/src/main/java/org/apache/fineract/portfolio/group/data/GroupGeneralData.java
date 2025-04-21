@@ -18,12 +18,14 @@
  */
 package org.apache.fineract.portfolio.group.data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -38,6 +40,9 @@ import org.apache.fineract.portfolio.client.data.ClientData;
  */
 @Getter
 public class GroupGeneralData implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final Long id;
     private final String accountNo;
@@ -72,6 +77,7 @@ public class GroupGeneralData implements Serializable {
     private final Collection<CodeValueData> closureReasons;
     private final GroupTimelineData timeline;
 
+    @Setter
     private List<DatatableData> datatables = null;
 
     // import fields
@@ -185,22 +191,6 @@ public class GroupGeneralData implements Serializable {
         this.selectedRole = null;
         this.closureReasons = null;
         this.timeline = null;
-    }
-
-    public Integer getRowIndex() {
-        return rowIndex;
-    }
-
-    public Long getCenterId() {
-        return centerId;
-    }
-
-    public LocalDate getActivationDate() {
-        return activationDate;
-    }
-
-    public String getOfficeName() {
-        return officeName;
     }
 
     public static GroupGeneralData lookup(final Long groupId, final String accountNo, final String groupName) {
@@ -319,32 +309,8 @@ public class GroupGeneralData implements Serializable {
         this.timeline = timeline;
     }
 
-    public Long getId() {
-        return this.id;
-    }
-
-    public String getAccountNo() {
-        return this.accountNo;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public Long officeId() {
-        return this.officeId;
-    }
-
-    public String getHierarchy() {
-        return this.hierarchy;
-    }
-
-    public boolean isChildGroup() {
+    public boolean isCenterIdNotNull() {
         return this.centerId != null;
-    }
-
-    public Long getParentId() {
-        return this.centerId;
     }
 
     public static GroupGeneralData updateSelectedRole(final GroupGeneralData grouping, final GroupRoleData selectedRole) {
@@ -386,14 +352,6 @@ public class GroupGeneralData implements Serializable {
         return new GroupGeneralData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId, centerName,
                 staffId, staffName, hierarchy, groupLevel, clientMembers, activeClientMembers, centerOptions, officeOptions, staffOptions,
                 clientOptions, groupRoles, availableRoles, role, calendarsData, collectionMeetingCalendar, closureReasons, null);
-    }
-
-    public Collection<ClientData> clientMembers() {
-        return this.clientMembers;
-    }
-
-    public void setDatatables(final List<DatatableData> datatables) {
-        this.datatables = datatables;
     }
 
     @Override

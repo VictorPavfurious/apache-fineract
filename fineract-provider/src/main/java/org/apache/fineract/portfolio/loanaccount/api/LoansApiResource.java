@@ -386,7 +386,7 @@ public class LoansApiResource {
                     newLoanAccount = newLoanAccount.setGroup(groupData).withExpectedDisbursementDate(expectedDisbursementDate);
                     if (productId != null) {
                         Map<Long, Integer> memberLoanCycle = new HashMap<>();
-                        Collection<ClientData> members = groupData.clientMembers();
+                        Collection<ClientData> members = groupData.getClientMembers();
                         accountLinkingOptions = new ArrayList<>();
                         if (members != null) {
                             for (ClientData clientData : members) {

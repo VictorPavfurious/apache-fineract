@@ -23,7 +23,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import jakarta.persistence.PersistenceException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -51,6 +54,7 @@ import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @AllArgsConstructor
@@ -202,7 +206,7 @@ public class EntityDatatableChecksWritePlatformServiceImpl implements EntityData
             final JsonArray datatableDatas) {
         final AppUser user = this.context.authenticatedUser();
         boolean isMakerCheckerEnabled = false;
-        if (datatableDatas != null && datatableDatas.size() > 0) {
+        if (datatableDatas != null && !datatableDatas.isEmpty()) {
             for (JsonElement element : datatableDatas) {
                 final String datatableName = this.fromApiJsonHelper.extractStringNamed("registeredTableName", element);
                 final JsonObject datatableData = this.fromApiJsonHelper.extractJsonObjectNamed("data", element);
