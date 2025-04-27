@@ -16,21 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.businessdate.mapper;
+package org.apache.fineract.infrastructure.businessdate.validator;
 
-import java.util.List;
-import org.apache.fineract.infrastructure.businessdate.data.BusinessDateResponse;
-import org.apache.fineract.infrastructure.businessdate.domain.BusinessDate;
-import org.apache.fineract.infrastructure.core.config.MapstructMapperConfig;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Mappings;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
+import java.util.Arrays;
+import java.util.Locale;
+import org.apache.commons.lang3.StringUtils;
 
-@Mapper(config = MapstructMapperConfig.class)
-public interface BusinessDateMapper {
+public class ValidISOLocaleValidator implements ConstraintValidator<ValidISOLocale, String> {
 
-    @Mappings({ @Mapping(target = "description", source = "source.type.description"), @Mapping(target = "changes", ignore = true) })
-    BusinessDateResponse map(BusinessDate source);
-
-    List<BusinessDateResponse> map(List<BusinessDate> sources);
+    @Override
+    public boolean isValid(String value, ConstraintValidatorContext context) {
+        return StringUtils.isBlank(value) || Arrays.asList(Locale.getISOLanguages()).contains(value);
+    }
 }

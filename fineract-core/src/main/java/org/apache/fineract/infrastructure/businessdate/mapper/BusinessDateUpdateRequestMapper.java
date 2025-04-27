@@ -18,19 +18,18 @@
  */
 package org.apache.fineract.infrastructure.businessdate.mapper;
 
-import java.util.List;
 import org.apache.fineract.infrastructure.businessdate.data.BusinessDateResponse;
-import org.apache.fineract.infrastructure.businessdate.domain.BusinessDate;
+import org.apache.fineract.infrastructure.businessdate.data.BusinessDateUpdateRequest;
 import org.apache.fineract.infrastructure.core.config.MapstructMapperConfig;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Mappings;
 
 @Mapper(config = MapstructMapperConfig.class)
-public interface BusinessDateMapper {
+public interface BusinessDateUpdateRequestMapper {
 
-    @Mappings({ @Mapping(target = "description", source = "source.type.description"), @Mapping(target = "changes", ignore = true) })
-    BusinessDateResponse map(BusinessDate source);
-
-    List<BusinessDateResponse> map(List<BusinessDate> sources);
+    @Mapping(target = "description", expression = "java(source.getType().getDescription())")
+    @Mapping(source = "type", target = "type")
+    @Mapping(target = "date", expression = "java(org.apache.fineract.infrastructure.core.service.DateUtils.parseToLocalDate(source.getLocale(), source.getDate(), source.getDateFormat()))")
+    @Mapping(target = "changes", ignore = true)
+    BusinessDateResponse map(BusinessDateUpdateRequest source);
 }

@@ -18,43 +18,43 @@
  */
 package org.apache.fineract.infrastructure.businessdate.data;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
-import org.apache.fineract.infrastructure.core.serialization.CommandProcessingResultJsonSerializer;
-import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
-import org.apache.fineract.infrastructure.core.serialization.ExcludeNothingWithPrettyPrintingOffJsonSerializerGoogleGson;
-import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
 import org.junit.jupiter.api.Test;
 
-public class BusinessDataSerialized {
+public class BusinessDateSerializationTest {
+
+    private final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule())
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
     @Test
-    public void serializeBusinessDateData() {
-        DefaultToApiJsonSerializer<BusinessDateData> jsonSerializer = new DefaultToApiJsonSerializer<>(
-                new ExcludeNothingWithPrettyPrintingOffJsonSerializerGoogleGson(), new CommandProcessingResultJsonSerializer(),
-                new GoogleGsonSerializerHelper());
-
+    public void serializeBusinessDateData() throws JsonProcessingException {
         LocalDate now = LocalDate.now(ZoneId.systemDefault());
-        BusinessDateData businessDateData = BusinessDateData.instance(BusinessDateType.BUSINESS_DATE, now);
-        String result = jsonSerializer.serialize(businessDateData);
+        BusinessDateResponse businessDateResponse = BusinessDateResponse.builder().type(BusinessDateType.BUSINESS_DATE)
+                .description(BusinessDateType.BUSINESS_DATE.getDescription()).date(now).build();
+
+        String result = mapper.writeValueAsString(businessDateResponse);
+
         assertEquals("{\"description\":\"Business Date\",\"type\":\"BUSINESS_DATE\",\"date\":[" + now.getYear() + "," + now.getMonthValue()
                 + "," + now.getDayOfMonth() + "]}", result);
     }
 
     @Test
-    public void serializeBusinessDateData_COB() {
-        DefaultToApiJsonSerializer<BusinessDateData> jsonSerializer = new DefaultToApiJsonSerializer<>(
-                new ExcludeNothingWithPrettyPrintingOffJsonSerializerGoogleGson(), new CommandProcessingResultJsonSerializer(),
-                new GoogleGsonSerializerHelper());
-
+    public void serializeBusinessDateData_COB() throws JsonProcessingException {
         LocalDate now = LocalDate.now(ZoneId.systemDefault());
-        BusinessDateData businessDateData = BusinessDateData.instance(BusinessDateType.COB_DATE, now);
-        String result = jsonSerializer.serialize(businessDateData);
+        BusinessDateResponse businessDateResponse = BusinessDateResponse.builder().type(BusinessDateType.COB_DATE)
+                .description(BusinessDateType.COB_DATE.getDescription()).date(now).build();
+
+        String result = mapper.writeValueAsString(businessDateResponse);
+
         assertEquals("{\"description\":\"Close of Business Date\",\"type\":\"COB_DATE\",\"date\":[" + now.getYear() + ","
                 + now.getMonthValue() + "," + now.getDayOfMonth() + "]}", result);
     }
-
 }

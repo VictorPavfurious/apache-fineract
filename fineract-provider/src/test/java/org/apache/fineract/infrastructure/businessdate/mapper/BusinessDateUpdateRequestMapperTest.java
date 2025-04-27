@@ -18,39 +18,38 @@
  */
 package org.apache.fineract.infrastructure.businessdate.mapper;
 
-import static org.junit.Assert.assertEquals;
-
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
-import org.apache.fineract.infrastructure.businessdate.data.BusinessDateData;
+import org.apache.fineract.infrastructure.businessdate.data.BusinessDateResponse;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDate;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
-public class BusinessDateMapperTest {
+public class BusinessDateUpdateRequestMapperTest {
 
-    private BusinessDateMapper businessDateMapper = Mappers.getMapper(BusinessDateMapper.class);
+    private final BusinessDateMapper businessDateMapper = Mappers.getMapper(BusinessDateMapper.class);
 
     @Test
     public void testMapping() {
         LocalDate now = LocalDate.now(ZoneId.systemDefault());
         BusinessDate businessDate = BusinessDate.instance(BusinessDateType.BUSINESS_DATE, now);
-        BusinessDateData businessDateData = businessDateMapper.map(businessDate);
-        assertEquals(businessDate.getDate(), businessDateData.getDate());
-        assertEquals(businessDate.getType().getDescription(), businessDateData.getDescription());
-        assertEquals(businessDate.getType().getName(), businessDateData.getType());
+        BusinessDateResponse businessDateResponse = businessDateMapper.map(businessDate);
+        Assertions.assertEquals(businessDate.getDate(), businessDateResponse.getDate());
+        Assertions.assertEquals(businessDate.getType().getDescription(), businessDateResponse.getDescription());
+        Assertions.assertEquals(businessDate.getType(), businessDateResponse.getType());
     }
 
     @Test
     public void testMappingList() {
         LocalDate now = LocalDate.now(ZoneId.systemDefault());
         BusinessDate businessDate = BusinessDate.instance(BusinessDateType.BUSINESS_DATE, now);
-        List<BusinessDateData> businessDateData = businessDateMapper.map(Collections.singletonList(businessDate));
-        assertEquals(businessDate.getDate(), businessDateData.get(0).getDate());
-        assertEquals(businessDate.getType().getDescription(), businessDateData.get(0).getDescription());
-        assertEquals(businessDate.getType().getName(), businessDateData.get(0).getType());
+        List<BusinessDateResponse> businessDateData = businessDateMapper.map(Collections.singletonList(businessDate));
+        Assertions.assertEquals(businessDate.getDate(), businessDateData.get(0).getDate());
+        Assertions.assertEquals(businessDate.getType().getDescription(), businessDateData.get(0).getDescription());
+        Assertions.assertEquals(businessDate.getType(), businessDateData.get(0).getType());
     }
 }

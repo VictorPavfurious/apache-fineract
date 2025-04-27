@@ -16,26 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.businessdate.api;
+package org.apache.fineract.infrastructure.businessdate.command;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.Map;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.apache.fineract.command.core.Command;
+import org.apache.fineract.infrastructure.businessdate.data.BusinessDateUpdateRequest;
 
-final class BusinessDateApiResourceSwagger {
-
-    private BusinessDateApiResourceSwagger() {
-
-    }
-
-    @Schema(description = "BusinessDateResponse")
-    public static final class BusinessDateResponse {
-
-        @Schema(example = "1")
-        public Long commandId;
-        public Map<String, Object> changes;
-
-        private BusinessDateResponse() {
-
-        }
-    }
-}
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class BusinessDateCommand extends Command<BusinessDateUpdateRequest> {}

@@ -18,9 +18,9 @@
  */
 package org.apache.fineract.infrastructure.jobs.service.increasedateby1day.increasecobdateby1day;
 
+import org.apache.fineract.infrastructure.businessdate.service.BusinessDateWritePlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
-import org.apache.fineract.infrastructure.jobs.service.increasedateby1day.IncreaseDateBy1DayService;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -40,7 +40,7 @@ public class IncreaseCobDateBy1DayConfig {
     @Autowired
     private PlatformTransactionManager transactionManager;
     @Autowired
-    private IncreaseDateBy1DayService increaseDateBy1DayService;
+    private BusinessDateWritePlatformService businessDateWritePlatformService;
     @Autowired
     private ConfigurationDomainService configurationDomainService;
 
@@ -58,6 +58,6 @@ public class IncreaseCobDateBy1DayConfig {
 
     @Bean
     public IncreaseCobDateBy1DayTasklet increaseCobDateBy1DayTasklet() {
-        return new IncreaseCobDateBy1DayTasklet(increaseDateBy1DayService, configurationDomainService);
+        return new IncreaseCobDateBy1DayTasklet(businessDateWritePlatformService, configurationDomainService);
     }
 }

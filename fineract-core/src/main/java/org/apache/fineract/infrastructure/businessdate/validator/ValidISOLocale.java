@@ -16,11 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.jobs.service.increasedateby1day;
+package org.apache.fineract.infrastructure.businessdate.validator;
 
-import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
+import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface IncreaseDateBy1DayService {
+@Documented
+@Constraint(validatedBy = ValidISOLocaleValidator.class)
+@Target({ ElementType.FIELD, ElementType.PARAMETER })
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ValidISOLocale {
 
-    void increaseDateByTypeByOneDay(BusinessDateType businessDateType);
+    String message() default "{org.apache.fineract.businessdate.business-date-update-request.locale.valid-iso-locale}";
+
+    Class<?>[] groups() default {};
+
+    Class<? extends Payload>[] payload() default {};
 }

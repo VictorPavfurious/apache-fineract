@@ -27,7 +27,10 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
+import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
@@ -386,6 +389,26 @@ public final class DateUtils {
             final List<ApiParameterError> errors = List.of(ApiParameterError.parameterError("validation.msg.invalid.date.pattern",
                     "The parameter date (" + stringDate + ") format is invalid", "date", stringDate));
             throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.", errors, e);
+        }
+    }
+
+    public static LocalDate parseToLocalDate(String local, String date, String dateFormat) {
+        Locale locale = Locale.forLanguageTag(local);
+        try {
+            String patternISO = dateFormat.replace("y", "u");
+            DateTimeFormatter formatter = new DateTimeFormatterBuilder().parseCaseInsensitive().parseLenient().appendPattern(patternISO)
+                    .optionalStart().appendPattern(" HH:mm:ss").optionalEnd().parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+                    .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0).parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0).toFormatter(locale)
+                    .withResolverStyle(ResolverStyle.STRICT);
+            return LocalDateTime.parse(date, formatter).toLocalDate();
+        } catch (DateTimeParseException e) {
+            final List<ApiParameterError> dataValidationErrors = List.of(ApiParameterError.parameterError(
+                    "validation.msg.invalid.dateFormat.format",
+                    "The parameter `date` is invalid based on the dateFormat: `" + dateFormat + "` and locale: `" + local + "` provided:",
+                    dateFormat));
+
+            throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
+                    dataValidationErrors, e);
         }
     }
 

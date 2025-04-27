@@ -21,24 +21,45 @@ package org.apache.fineract.infrastructure.businessdate.data;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
+import lombok.experimental.FieldNameConstants;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
 
+@Builder
 @Data
 @NoArgsConstructor
-@Accessors(chain = true)
-public class BusinessDateData implements Serializable {
+@AllArgsConstructor
+@FieldNameConstants
+public class BusinessDateResponse implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
-    private String description;
-    private String type;
-    private LocalDate date;
 
-    public static BusinessDateData instance(BusinessDateType businessDateType, LocalDate value) {
-        return new BusinessDateData().setType(businessDateType.getName()).setDescription(businessDateType.getDescription()).setDate(value);
+    private String description;
+    private BusinessDateType type;
+    private LocalDate date;
+    private Map<BusinessDateType, LocalDate> changes;
+
+    public void addChange(final BusinessDateType businessDateType, final LocalDate date) {
+        if (this.changes == null) {
+            this.changes = new HashMap<>();
+        }
+
+        changes.put(businessDateType, date);
     }
 
+    public void addAllChanges(final Map<BusinessDateType, LocalDate> changes) {
+        if (changes == null || changes.isEmpty()) {
+            return;
+        }
+
+        for (final Map.Entry<BusinessDateType, LocalDate> entry : changes.entrySet()) {
+            addChange(entry.getKey(), entry.getValue());
+        }
+    }
 }

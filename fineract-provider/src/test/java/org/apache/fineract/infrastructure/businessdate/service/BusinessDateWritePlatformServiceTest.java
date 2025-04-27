@@ -27,17 +27,15 @@ import static org.mockito.Mockito.verify;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Optional;
-import org.apache.fineract.infrastructure.businessdate.data.BusinessDateData;
+import org.apache.fineract.infrastructure.businessdate.data.BusinessDateResponse;
+import org.apache.fineract.infrastructure.businessdate.data.BusinessDateUpdateRequest;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDate;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateRepository;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
 import org.apache.fineract.infrastructure.businessdate.exception.BusinessDateActionException;
-import org.apache.fineract.infrastructure.businessdate.validator.BusinessDateDataParserAndValidator;
+import org.apache.fineract.infrastructure.businessdate.mapper.BusinessDateUpdateRequestMapper;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
@@ -64,7 +62,7 @@ public class BusinessDateWritePlatformServiceTest {
     private BusinessDateWritePlatformServiceImpl underTest;
 
     @Mock
-    private BusinessDateDataParserAndValidator businessDateDataParserAndValidator;
+    private BusinessDateUpdateRequestMapper mapper;
 
     @Mock
     private BusinessDateRepository businessDateRepository;
@@ -87,27 +85,25 @@ public class BusinessDateWritePlatformServiceTest {
 
     @Test
     public void businessDateIsNotEnabled() {
-        JsonCommand command = JsonCommand.from("");
-        BusinessDateData businessDateData = BusinessDateData.instance(BusinessDateType.BUSINESS_DATE,
-                LocalDate.now(ZoneId.systemDefault()));
+        var request = new BusinessDateUpdateRequest();
         given(configurationDomainService.isBusinessDateEnabled()).willReturn(Boolean.FALSE);
-        given(businessDateDataParserAndValidator.validateAndParseUpdate(command)).willReturn(businessDateData);
-        BusinessDateActionException exception = assertThrows(BusinessDateActionException.class,
-                () -> underTest.updateBusinessDate(command));
+
+        var exception = assertThrows(BusinessDateActionException.class, () -> underTest.updateBusinessDate(request));
         assertEquals("Business date functionality is not enabled", exception.getDefaultUserMessage());
     }
 
     @Test
     public void businessDateSetNew() {
-        JsonCommand command = JsonCommand.from("");
-        BusinessDateData businessDateData = BusinessDateData.instance(BusinessDateType.BUSINESS_DATE, LocalDate.of(2022, 6, 13));
+        var request = new BusinessDateUpdateRequest();
+        var response = BusinessDateResponse.builder().type(BusinessDateType.BUSINESS_DATE)
+                .description(BusinessDateType.BUSINESS_DATE.getDescription()).date(LocalDate.of(2022, 6, 13)).build();
         given(configurationDomainService.isBusinessDateEnabled()).willReturn(Boolean.TRUE);
         given(configurationDomainService.isCOBDateAdjustmentEnabled()).willReturn(Boolean.FALSE);
-        given(businessDateDataParserAndValidator.validateAndParseUpdate(command)).willReturn(businessDateData);
+        given(mapper.map(request)).willReturn(response);
         Optional<BusinessDate> newEntity = Optional.empty();
         given(businessDateRepository.findByType(BusinessDateType.BUSINESS_DATE)).willReturn(newEntity);
-        CommandProcessingResult result = underTest.updateBusinessDate(command);
-        LocalDate resultData = (LocalDate) result.getChanges().get("BUSINESS_DATE");
+        var result = underTest.updateBusinessDate(request);
+        var resultData = result.getChanges().get(BusinessDateType.BUSINESS_DATE);
         assertEquals(LocalDate.of(2022, 6, 13), resultData);
         verify(configurationDomainService, times(1)).isBusinessDateEnabled();
         verify(configurationDomainService, times(1)).isCOBDateAdjustmentEnabled();
@@ -119,15 +115,17 @@ public class BusinessDateWritePlatformServiceTest {
 
     @Test
     public void cobDateSetNew() {
-        JsonCommand command = JsonCommand.from("");
-        BusinessDateData businessDateData = BusinessDateData.instance(BusinessDateType.COB_DATE, LocalDate.of(2022, 6, 13));
+        var request = new BusinessDateUpdateRequest();
+        var response = BusinessDateResponse.builder().type(BusinessDateType.COB_DATE)
+                .description(BusinessDateType.COB_DATE.getDescription()).date(LocalDate.of(2022, 6, 13)).build();
         given(configurationDomainService.isBusinessDateEnabled()).willReturn(Boolean.TRUE);
         given(configurationDomainService.isCOBDateAdjustmentEnabled()).willReturn(Boolean.FALSE);
-        given(businessDateDataParserAndValidator.validateAndParseUpdate(command)).willReturn(businessDateData);
+        given(mapper.map(request)).willReturn(response);
+
         Optional<BusinessDate> newEntity = Optional.empty();
         given(businessDateRepository.findByType(BusinessDateType.COB_DATE)).willReturn(newEntity);
-        CommandProcessingResult result = underTest.updateBusinessDate(command);
-        LocalDate resultData = (LocalDate) result.getChanges().get("COB_DATE");
+        var result = underTest.updateBusinessDate(request);
+        LocalDate resultData = result.getChanges().get(BusinessDateType.COB_DATE);
         assertEquals(LocalDate.of(2022, 6, 13), resultData);
         verify(configurationDomainService, times(1)).isBusinessDateEnabled();
         verify(configurationDomainService, times(1)).isCOBDateAdjustmentEnabled();
@@ -139,15 +137,17 @@ public class BusinessDateWritePlatformServiceTest {
 
     @Test
     public void businessDateSetModifyExistingWhenItWasAfter() {
-        JsonCommand command = JsonCommand.from("");
-        BusinessDateData businessDateData = BusinessDateData.instance(BusinessDateType.BUSINESS_DATE, LocalDate.of(2022, 6, 11));
+        var request = new BusinessDateUpdateRequest();
+        var response = BusinessDateResponse.builder().type(BusinessDateType.BUSINESS_DATE)
+                .description(BusinessDateType.BUSINESS_DATE.getDescription()).date(LocalDate.of(2022, 6, 11)).build();
         given(configurationDomainService.isBusinessDateEnabled()).willReturn(Boolean.TRUE);
         given(configurationDomainService.isCOBDateAdjustmentEnabled()).willReturn(Boolean.FALSE);
-        given(businessDateDataParserAndValidator.validateAndParseUpdate(command)).willReturn(businessDateData);
-        Optional<BusinessDate> newEntity = Optional.of(BusinessDate.instance(BusinessDateType.BUSINESS_DATE, LocalDate.of(2022, 6, 12)));
+        given(mapper.map(request)).willReturn(response);
+
+        var newEntity = Optional.of(BusinessDate.instance(BusinessDateType.BUSINESS_DATE, LocalDate.of(2022, 6, 12)));
         given(businessDateRepository.findByType(BusinessDateType.BUSINESS_DATE)).willReturn(newEntity);
-        CommandProcessingResult result = underTest.updateBusinessDate(command);
-        LocalDate resultData = (LocalDate) result.getChanges().get("BUSINESS_DATE");
+        var result = underTest.updateBusinessDate(request);
+        var resultData = result.getChanges().get(BusinessDateType.BUSINESS_DATE);
         assertEquals(LocalDate.of(2022, 6, 11), resultData);
         verify(configurationDomainService, times(1)).isBusinessDateEnabled();
         verify(configurationDomainService, times(1)).isCOBDateAdjustmentEnabled();
@@ -159,15 +159,17 @@ public class BusinessDateWritePlatformServiceTest {
 
     @Test
     public void businessDateSetModifyExistingWhenItWasBefore() {
-        JsonCommand command = JsonCommand.from("");
-        BusinessDateData businessDateData = BusinessDateData.instance(BusinessDateType.BUSINESS_DATE, LocalDate.of(2022, 6, 13));
+        var request = new BusinessDateUpdateRequest();
+        var response = BusinessDateResponse.builder().type(BusinessDateType.BUSINESS_DATE)
+                .description(BusinessDateType.BUSINESS_DATE.getDescription()).date(LocalDate.of(2022, 6, 13)).build();
         given(configurationDomainService.isBusinessDateEnabled()).willReturn(Boolean.TRUE);
         given(configurationDomainService.isCOBDateAdjustmentEnabled()).willReturn(Boolean.FALSE);
-        given(businessDateDataParserAndValidator.validateAndParseUpdate(command)).willReturn(businessDateData);
-        Optional<BusinessDate> newEntity = Optional.of(BusinessDate.instance(BusinessDateType.BUSINESS_DATE, LocalDate.of(2022, 6, 12)));
+        given(mapper.map(request)).willReturn(response);
+
+        var newEntity = Optional.of(BusinessDate.instance(BusinessDateType.BUSINESS_DATE, LocalDate.of(2022, 6, 12)));
         given(businessDateRepository.findByType(BusinessDateType.BUSINESS_DATE)).willReturn(newEntity);
-        CommandProcessingResult result = underTest.updateBusinessDate(command);
-        LocalDate resultData = (LocalDate) result.getChanges().get("BUSINESS_DATE");
+        var result = underTest.updateBusinessDate(request);
+        var resultData = result.getChanges().get(BusinessDateType.BUSINESS_DATE);
         assertEquals(LocalDate.of(2022, 6, 13), resultData);
         verify(configurationDomainService, times(1)).isBusinessDateEnabled();
         verify(configurationDomainService, times(1)).isCOBDateAdjustmentEnabled();
@@ -179,14 +181,16 @@ public class BusinessDateWritePlatformServiceTest {
 
     @Test
     public void businessDateSetModifyExistingButNoChanges() {
-        JsonCommand command = JsonCommand.from("");
-        BusinessDateData businessDateData = BusinessDateData.instance(BusinessDateType.BUSINESS_DATE, LocalDate.of(2022, 6, 13));
+        var request = new BusinessDateUpdateRequest();
+        var response = BusinessDateResponse.builder().type(BusinessDateType.BUSINESS_DATE)
+                .description(BusinessDateType.BUSINESS_DATE.getDescription()).date(LocalDate.of(2022, 6, 13)).build();
         given(configurationDomainService.isBusinessDateEnabled()).willReturn(Boolean.TRUE);
         given(configurationDomainService.isCOBDateAdjustmentEnabled()).willReturn(Boolean.FALSE);
-        given(businessDateDataParserAndValidator.validateAndParseUpdate(command)).willReturn(businessDateData);
-        Optional<BusinessDate> newEntity = Optional.of(BusinessDate.instance(BusinessDateType.BUSINESS_DATE, LocalDate.of(2022, 6, 13)));
+        given(mapper.map(request)).willReturn(response);
+
+        var newEntity = Optional.of(BusinessDate.instance(BusinessDateType.BUSINESS_DATE, LocalDate.of(2022, 6, 13)));
         given(businessDateRepository.findByType(BusinessDateType.BUSINESS_DATE)).willReturn(newEntity);
-        CommandProcessingResult result = underTest.updateBusinessDate(command);
+        var result = underTest.updateBusinessDate(request);
         assertNull(result.getChanges());
         verify(configurationDomainService, times(1)).isBusinessDateEnabled();
         verify(configurationDomainService, times(1)).isCOBDateAdjustmentEnabled();
@@ -196,17 +200,19 @@ public class BusinessDateWritePlatformServiceTest {
 
     @Test
     public void cobDateSetNewAutomatically() {
-        JsonCommand command = JsonCommand.from("");
-        BusinessDateData businessDateData = BusinessDateData.instance(BusinessDateType.BUSINESS_DATE, LocalDate.of(2022, 6, 13));
+        var request = new BusinessDateUpdateRequest();
+        var response = BusinessDateResponse.builder().type(BusinessDateType.BUSINESS_DATE)
+                .description(BusinessDateType.BUSINESS_DATE.getDescription()).date(LocalDate.of(2022, 6, 13)).build();
         given(configurationDomainService.isBusinessDateEnabled()).willReturn(Boolean.TRUE);
         given(configurationDomainService.isCOBDateAdjustmentEnabled()).willReturn(Boolean.TRUE);
-        given(businessDateDataParserAndValidator.validateAndParseUpdate(command)).willReturn(businessDateData);
+        given(mapper.map(request)).willReturn(response);
+
         Optional<BusinessDate> newEntity = Optional.empty();
         given(businessDateRepository.findByType(BusinessDateType.BUSINESS_DATE)).willReturn(newEntity);
-        CommandProcessingResult result = underTest.updateBusinessDate(command);
-        LocalDate businessDate = (LocalDate) result.getChanges().get("BUSINESS_DATE");
+        var result = underTest.updateBusinessDate(request);
+        var businessDate = result.getChanges().get(BusinessDateType.BUSINESS_DATE);
         assertEquals(LocalDate.of(2022, 6, 13), businessDate);
-        LocalDate cobDate = (LocalDate) result.getChanges().get("COB_DATE");
+        var cobDate = result.getChanges().get(BusinessDateType.COB_DATE);
         assertEquals(LocalDate.of(2022, 6, 12), cobDate);
         verify(configurationDomainService, times(1)).isBusinessDateEnabled();
         verify(configurationDomainService, times(1)).isCOBDateAdjustmentEnabled();
@@ -221,17 +227,18 @@ public class BusinessDateWritePlatformServiceTest {
 
     @Test
     public void businessDateAndCobDateSetModifyExistingButNoChanges() {
-        JsonCommand command = JsonCommand.from("");
-        BusinessDateData businessDateData = BusinessDateData.instance(BusinessDateType.BUSINESS_DATE, LocalDate.of(2022, 6, 13));
+        var request = new BusinessDateUpdateRequest();
+        var response = BusinessDateResponse.builder().type(BusinessDateType.BUSINESS_DATE)
+                .description(BusinessDateType.BUSINESS_DATE.getDescription()).date(LocalDate.of(2022, 6, 13)).build();
         given(configurationDomainService.isBusinessDateEnabled()).willReturn(Boolean.TRUE);
         given(configurationDomainService.isCOBDateAdjustmentEnabled()).willReturn(Boolean.TRUE);
-        given(businessDateDataParserAndValidator.validateAndParseUpdate(command)).willReturn(businessDateData);
-        Optional<BusinessDate> newBusinessEntity = Optional
-                .of(BusinessDate.instance(BusinessDateType.BUSINESS_DATE, LocalDate.of(2022, 6, 13)));
-        Optional<BusinessDate> newCOBEntity = Optional.of(BusinessDate.instance(BusinessDateType.COB_DATE, LocalDate.of(2022, 6, 12)));
+        given(mapper.map(request)).willReturn(response);
+
+        var newBusinessEntity = Optional.of(BusinessDate.instance(BusinessDateType.BUSINESS_DATE, LocalDate.of(2022, 6, 13)));
+        var newCOBEntity = Optional.of(BusinessDate.instance(BusinessDateType.COB_DATE, LocalDate.of(2022, 6, 12)));
         given(businessDateRepository.findByType(BusinessDateType.BUSINESS_DATE)).willReturn(newBusinessEntity);
         given(businessDateRepository.findByType(BusinessDateType.COB_DATE)).willReturn(newCOBEntity);
-        CommandProcessingResult result = underTest.updateBusinessDate(command);
+        var result = underTest.updateBusinessDate(request);
         assertNull(result.getChanges());
         verify(configurationDomainService, times(1)).isBusinessDateEnabled();
         verify(configurationDomainService, times(1)).isCOBDateAdjustmentEnabled();
@@ -243,18 +250,18 @@ public class BusinessDateWritePlatformServiceTest {
     @Test
     public void businessDateIsNotEnabledTriggeredByJob() {
         given(configurationDomainService.isBusinessDateEnabled()).willReturn(Boolean.FALSE);
-        assertThrows(JobExecutionException.class, () -> underTest.increaseBusinessDateByOneDay());
+        assertThrows(JobExecutionException.class, () -> underTest.increaseDateByTypeByOneDay(BusinessDateType.BUSINESS_DATE));
     }
 
     @Test
     public void businessDateSetNewTriggeredByJob() throws JobExecutionException {
-        LocalDate localDate = DateUtils.getLocalDateOfTenant();
-        LocalDate localDatePlus1 = localDate.plusDays(1);
+        var localDate = DateUtils.getLocalDateOfTenant();
+        var localDatePlus1 = localDate.plusDays(1);
         given(configurationDomainService.isBusinessDateEnabled()).willReturn(Boolean.TRUE);
         given(configurationDomainService.isCOBDateAdjustmentEnabled()).willReturn(Boolean.TRUE);
         Optional<BusinessDate> newEntity = Optional.empty();
         given(businessDateRepository.findByType(BusinessDateType.BUSINESS_DATE)).willReturn(newEntity);
-        underTest.increaseBusinessDateByOneDay();
+        underTest.increaseDateByTypeByOneDay(BusinessDateType.BUSINESS_DATE);
         verify(configurationDomainService, times(1)).isBusinessDateEnabled();
         verify(configurationDomainService, times(1)).isCOBDateAdjustmentEnabled();
         verify(businessDateRepository, times(2)).save(businessDateArgumentCaptor.capture());
@@ -266,12 +273,12 @@ public class BusinessDateWritePlatformServiceTest {
 
     @Test
     public void cobDateModifyExistingTriggeredByJob() throws JobExecutionException {
-        Optional<BusinessDate> newCOBEntity = Optional.of(BusinessDate.instance(BusinessDateType.COB_DATE, LocalDate.of(2022, 6, 12)));
+        var newCOBEntity = Optional.of(BusinessDate.instance(BusinessDateType.COB_DATE, LocalDate.of(2022, 6, 12)));
         given(businessDateRepository.findByType(BusinessDateType.COB_DATE)).willReturn(newCOBEntity);
-        LocalDate localDate = LocalDate.of(2022, 6, 12).plusDays(1);
+        var localDate = LocalDate.of(2022, 6, 12).plusDays(1);
         given(configurationDomainService.isBusinessDateEnabled()).willReturn(Boolean.TRUE);
         given(configurationDomainService.isCOBDateAdjustmentEnabled()).willReturn(Boolean.TRUE);
-        underTest.increaseCOBDateByOneDay();
+        underTest.increaseDateByTypeByOneDay(BusinessDateType.COB_DATE);
         verify(configurationDomainService, times(1)).isBusinessDateEnabled();
         verify(configurationDomainService, times(1)).isCOBDateAdjustmentEnabled();
         verify(businessDateRepository, times(1)).save(businessDateArgumentCaptor.capture());
